@@ -10,5 +10,5 @@ export const commentApi = {
 
   delete: (id: number) => apiClient.delete<Comment>(`/comments/${id}`),
 
-  like: (id: number) => apiClient.patch<Comment>(`/comments/${id}`, { likes: 1 }),
+  like: (id: number, likes: number) => apiClient.patch<Comment>(`/comments/${id}`, { likes }),
 }

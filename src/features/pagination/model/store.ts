@@ -14,7 +14,7 @@ interface PaginationState {
 
 export const usePaginationStore = create<PaginationState>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       skip: 0,
       limit: 10,
 

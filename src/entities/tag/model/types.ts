@@ -1,3 +1,7 @@
-export type Tag = string
+export interface Tag {
+  slug: string
+  name: string
+  url: string
+}
 
 export type TagsResponse = Tag[]

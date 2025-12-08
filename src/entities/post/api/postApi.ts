@@ -10,9 +10,9 @@ export const postApi = {
   searchPosts: (query: string) =>
     apiClient.get<PostsResponse>("/posts/search", { params: { q: query } }),
 
-  createPost: (data: CreatePostRequest) => apiClient.post<Post>("/posts/add", data),
+  create: (data: CreatePostRequest) => apiClient.post<Post>("/posts/add", data),
 
-  updatePost: (id: number, data: UpdatePostRequest) => apiClient.put<Post>(`/posts/${id}`, data),
+  update: (id: number, data: UpdatePostRequest) => apiClient.put<Post>(`/posts/${id}`, data),
 
-  deletePost: (id: number) => apiClient.delete<Post>(`/posts/${id}`),
+  delete: (id: number) => apiClient.delete<Post>(`/posts/${id}`),
 }

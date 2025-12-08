@@ -13,6 +13,7 @@ export interface Post {
 
 export interface PostWithAuthor extends Post {
   author?: {
+    id: number
     username: string
     image: string
   }

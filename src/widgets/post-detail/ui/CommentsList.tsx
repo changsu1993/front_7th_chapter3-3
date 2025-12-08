@@ -1,7 +1,7 @@
 import { Edit2, Plus, ThumbsUp, Trash2 } from "lucide-react"
 import { Button } from "@/shared/ui"
 import { useUIStore } from "@/shared/store"
-import { useComments } from "@/entities/comment"
+import { useComments, type Comment } from "@/entities/comment"
 import { useDeleteComment, useLikeComment, useFilterStore } from "@/features"
 
 interface CommentsListProps {
@@ -27,9 +27,11 @@ const highlightText = (text: string, highlight: string) => {
 export const CommentsList = ({ postId }: CommentsListProps) => {
   const { openAddCommentDialog, openEditCommentDialog } = useUIStore()
   const { searchQuery } = useFilterStore()
-  const { data: comments } = useComments(postId)
+  const { data: commentsData } = useComments(postId)
   const deleteComment = useDeleteComment()
   const likeComment = useLikeComment()
+
+  const comments = commentsData?.comments || []
 
   return (
     <div className="mt-2">
@@ -41,7 +43,7 @@ export const CommentsList = ({ postId }: CommentsListProps) => {
         </Button>
       </div>
       <div className="space-y-1">
-        {comments?.map((comment) => (
+        {comments.map((comment: Comment) => (
           <div
             key={comment.id}
             className="flex items-center justify-between text-sm border-b pb-1"
