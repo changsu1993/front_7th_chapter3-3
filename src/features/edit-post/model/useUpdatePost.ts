@@ -1,14 +1,19 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { postApi, type PostsResponse } from "@/entities/post"
+import { postApi, type PostsResponse, type UpdatePostRequest } from "@/entities/post"
 import { queryKeys } from "@/shared/api"
 
-export const useDeletePost = () => {
+interface UpdatePostParams {
+  id: number
+  data: UpdatePostRequest
+}
+
+export const useUpdatePost = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (postId: number) => postApi.delete(postId),
+    mutationFn: ({ id, data }: UpdatePostParams) => postApi.update(id, data),
 
-    onMutate: async (deletedId) => {
+    onMutate: async ({ id, data }) => {
       // 1. Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: queryKeys.posts.all,
@@ -19,15 +24,16 @@ export const useDeletePost = () => {
         queryKey: queryKeys.posts.all,
       })
 
-      // 3. Optimistically remove from all cached lists
+      // 3. Optimistically update all cached lists
       queryClient.setQueriesData<PostsResponse>(
         { queryKey: queryKeys.posts.all },
         (old) => {
           if (!old) return old
           return {
             ...old,
-            posts: old.posts.filter((p) => p.id !== deletedId),
-            total: old.total - 1,
+            posts: old.posts.map((post) =>
+              post.id === id ? { ...post, ...data } : post
+            ),
           }
         }
       )
@@ -36,12 +42,12 @@ export const useDeletePost = () => {
       return { previousData }
     },
 
-    onError: (error, _deletedId, context) => {
+    onError: (error, _variables, context) => {
       // 5. Restore all previous data on error
       context?.previousData.forEach(([queryKey, data]) => {
         queryClient.setQueryData(queryKey, data)
       })
-      console.error("게시물 삭제 오류:", error)
+      console.error("게시물 수정 오류:", error)
     },
 
     onSettled: () => {

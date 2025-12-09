@@ -9,9 +9,8 @@ import {
   Textarea,
 } from "@/shared/ui"
 import { useUIStore } from "@/shared/store"
-import { postApi, type CreatePostRequest } from "@/entities/post"
-import { useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from "@/shared/api"
+import { type CreatePostRequest } from "@/entities/post"
+import { useAddPost } from "../model/useAddPost"
 
 export const AddPostDialog = () => {
   const { showAddPostDialog, closeAddPostDialog } = useUIStore()
@@ -20,17 +19,15 @@ export const AddPostDialog = () => {
     body: "",
     userId: 1,
   })
-  const queryClient = useQueryClient()
+  const addPost = useAddPost()
 
-  const handleAddPost = async () => {
-    try {
-      await postApi.create(newPost)
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all })
-      closeAddPostDialog()
-      setNewPost({ title: "", body: "", userId: 1 })
-    } catch (error) {
-      console.error("게시물 추가 오류:", error)
-    }
+  const handleAddPost = () => {
+    addPost.mutate(newPost, {
+      onSuccess: () => {
+        closeAddPostDialog()
+        setNewPost({ title: "", body: "", userId: 1 })
+      },
+    })
   }
 
   return (
@@ -57,7 +54,9 @@ export const AddPostDialog = () => {
             value={newPost.userId}
             onChange={(e) => setNewPost({ ...newPost, userId: Number(e.target.value) })}
           />
-          <Button onClick={handleAddPost}>게시물 추가</Button>
+          <Button onClick={handleAddPost} disabled={addPost.isPending}>
+            {addPost.isPending ? "추가 중..." : "게시물 추가"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,21 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { commentApi, type CommentsResponse } from "@/entities/comment"
+import { commentApi, type CommentsResponse, type UpdateCommentRequest } from "@/entities/comment"
 import { queryKeys } from "@/shared/api"
 
-interface LikeCommentParams {
+interface UpdateCommentParams {
   commentId: number
   postId: number
-  currentLikes: number
+  data: UpdateCommentRequest
 }
 
-export const useLikeComment = () => {
+export const useUpdateComment = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ commentId, currentLikes }: LikeCommentParams) =>
-      commentApi.like(commentId, currentLikes + 1),
+    mutationFn: ({ commentId, data }: UpdateCommentParams) =>
+      commentApi.update(commentId, data),
 
-    onMutate: async ({ commentId, postId }) => {
+    onMutate: async ({ commentId, postId, data }) => {
       // 1. Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: queryKeys.comments.byPost(postId),
@@ -26,7 +26,7 @@ export const useLikeComment = () => {
         queryKeys.comments.byPost(postId)
       )
 
-      // 3. Optimistically update to the new value
+      // 3. Optimistically update the comment
       queryClient.setQueryData<CommentsResponse>(
         queryKeys.comments.byPost(postId),
         (old) => {
@@ -35,7 +35,7 @@ export const useLikeComment = () => {
             ...old,
             comments: old.comments.map((comment) =>
               comment.id === commentId
-                ? { ...comment, likes: comment.likes + 1 }
+                ? { ...comment, ...data }
                 : comment
             ),
           }
@@ -54,7 +54,7 @@ export const useLikeComment = () => {
           context.previousData
         )
       }
-      console.error("댓글 좋아요 오류:", error)
+      console.error("댓글 수정 오류:", error)
     },
 
     onSettled: (_data, _error, { postId }) => {

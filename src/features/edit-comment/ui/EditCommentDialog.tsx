@@ -1,23 +1,26 @@
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@/shared/ui"
 import { useUIStore } from "@/shared/store"
-import { commentApi } from "@/entities/comment"
-import { useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from "@/shared/api"
+import { useUpdateComment } from "../model/useUpdateComment"
 
 export const EditCommentDialog = () => {
   const { showEditCommentDialog, closeEditCommentDialog, selectedComment } = useUIStore()
-  const queryClient = useQueryClient()
+  const updateComment = useUpdateComment()
 
-  const handleUpdateComment = async () => {
+  const handleUpdateComment = () => {
     if (!selectedComment) return
 
-    try {
-      await commentApi.update(selectedComment.id, { body: selectedComment.body })
-      queryClient.invalidateQueries({ queryKey: queryKeys.comments.byPost(selectedComment.postId) })
-      closeEditCommentDialog()
-    } catch (error) {
-      console.error("댓글 업데이트 오류:", error)
-    }
+    updateComment.mutate(
+      {
+        commentId: selectedComment.id,
+        postId: selectedComment.postId,
+        data: { body: selectedComment.body },
+      },
+      {
+        onSuccess: () => {
+          closeEditCommentDialog()
+        },
+      }
+    )
   }
 
   const updateSelectedComment = (body: string) => {
@@ -39,7 +42,9 @@ export const EditCommentDialog = () => {
             value={selectedComment?.body || ""}
             onChange={(e) => updateSelectedComment(e.target.value)}
           />
-          <Button onClick={handleUpdateComment}>댓글 업데이트</Button>
+          <Button onClick={handleUpdateComment} disabled={updateComment.isPending}>
+            {updateComment.isPending ? "수정 중..." : "댓글 업데이트"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -8,27 +8,29 @@ import {
   Textarea,
 } from "@/shared/ui"
 import { useUIStore } from "@/shared/store"
-import { postApi } from "@/entities/post"
-import { useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from "@/shared/api"
+import { useUpdatePost } from "../model/useUpdatePost"
 
 export const EditPostDialog = () => {
   const { showEditPostDialog, closeEditPostDialog, selectedPost } = useUIStore()
-  const queryClient = useQueryClient()
+  const updatePost = useUpdatePost()
 
-  const handleUpdatePost = async () => {
+  const handleUpdatePost = () => {
     if (!selectedPost) return
 
-    try {
-      await postApi.update(selectedPost.id, {
-        title: selectedPost.title,
-        body: selectedPost.body,
-      })
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all })
-      closeEditPostDialog()
-    } catch (error) {
-      console.error("게시물 업데이트 오류:", error)
-    }
+    updatePost.mutate(
+      {
+        id: selectedPost.id,
+        data: {
+          title: selectedPost.title,
+          body: selectedPost.body,
+        },
+      },
+      {
+        onSuccess: () => {
+          closeEditPostDialog()
+        },
+      }
+    )
   }
 
   const updateSelectedPost = (updates: Partial<typeof selectedPost>) => {
@@ -56,7 +58,9 @@ export const EditPostDialog = () => {
             value={selectedPost?.body || ""}
             onChange={(e) => updateSelectedPost({ body: e.target.value })}
           />
-          <Button onClick={handleUpdatePost}>게시물 업데이트</Button>
+          <Button onClick={handleUpdatePost} disabled={updatePost.isPending}>
+            {updatePost.isPending ? "수정 중..." : "게시물 업데이트"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

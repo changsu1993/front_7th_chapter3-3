@@ -1,9 +1,7 @@
 import { useState } from "react"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@/shared/ui"
 import { useUIStore } from "@/shared/store"
-import { commentApi, type CreateCommentRequest } from "@/entities/comment"
-import { useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from "@/shared/api"
+import { useAddComment } from "../model/useAddComment"
 
 interface AddCommentDialogProps {
   postId: number | null
@@ -11,23 +9,21 @@ interface AddCommentDialogProps {
 
 export const AddCommentDialog = ({ postId }: AddCommentDialogProps) => {
   const { showAddCommentDialog, closeAddCommentDialog } = useUIStore()
-  const [newComment, setNewComment] = useState<Omit<CreateCommentRequest, "postId">>({
-    body: "",
-    userId: 1,
-  })
-  const queryClient = useQueryClient()
+  const [body, setBody] = useState("")
+  const addComment = useAddComment()
 
-  const handleAddComment = async () => {
+  const handleAddComment = () => {
     if (!postId) return
 
-    try {
-      await commentApi.create({ ...newComment, postId })
-      queryClient.invalidateQueries({ queryKey: queryKeys.comments.byPost(postId) })
-      closeAddCommentDialog()
-      setNewComment({ body: "", userId: 1 })
-    } catch (error) {
-      console.error("댓글 추가 오류:", error)
-    }
+    addComment.mutate(
+      { body, postId, userId: 1 },
+      {
+        onSuccess: () => {
+          closeAddCommentDialog()
+          setBody("")
+        },
+      }
+    )
   }
 
   return (
@@ -39,10 +35,12 @@ export const AddCommentDialog = ({ postId }: AddCommentDialogProps) => {
         <div className="space-y-4">
           <Textarea
             placeholder="댓글 내용"
-            value={newComment.body}
-            onChange={(e) => setNewComment({ ...newComment, body: e.target.value })}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
           />
-          <Button onClick={handleAddComment}>댓글 추가</Button>
+          <Button onClick={handleAddComment} disabled={addComment.isPending}>
+            {addComment.isPending ? "추가 중..." : "댓글 추가"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
